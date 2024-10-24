@@ -22,4 +22,8 @@ public class Match {
         this.awayScore = 0;
         this.startTime = Instant.now().toEpochMilli();
     }
+
+    public int getTotalScore() {
+        return homeScore + awayScore; // Total score of the match
+    }
 }

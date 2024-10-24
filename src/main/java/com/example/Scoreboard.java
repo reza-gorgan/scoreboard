@@ -1,25 +1,49 @@
 package com.example;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class Scoreboard {
+
+    private final Map<String, Match> matchMap = new ConcurrentHashMap<>();
+
     public String startMatch(String homeTeam, String awayTeam) {
-        // To be implemented
-        return UUID.randomUUID().toString();
+        Match match = new Match(homeTeam, awayTeam);
+        matchMap.put(match.getId(), match);
+        return match.getId();
     }
+
     public void updateScore(String matchId, int homeScore, int awayScore) {
-        // To be implemented
+        if (homeScore < 0 || awayScore < 0) {
+            throw new IllegalArgumentException("Scores cannot be negative");
+        }
+        matchMap.computeIfPresent(matchId, (key, match) -> {
+            match.setHomeScore(homeScore);
+            match.setAwayScore(awayScore);
+            return match;
+        });
     }
+
     public void finishMatch(String matchId) {
-        // To be implemented
+        matchMap.remove(matchId);
     }
+
     public Map<String, Match> getMatches() {
-        // To be implemented
-        return Collections.emptyMap();
+        return matchMap;
     }
 
     public List<Match> getSummary() {
-        // To be implemented
-        return Collections.emptyList();
+        List<Match> matches;
+        synchronized (matchMap) {  // to create a consistent snapshot of the current state of the board
+            matches = new ArrayList<>(matchMap.values());
+        }
+        matches.sort((m1, m2) -> {
+            int scoreComparison = Integer.compare(m2.getTotalScore(), m1.getTotalScore());
+            if (scoreComparison != 0) {
+                return scoreComparison;
+            }
+            return Long.compare(m2.getStartTime(), m1.getStartTime());
+        });
+        return matches;
     }
 }
